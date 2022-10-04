@@ -100,4 +100,5 @@ contract SoulGen is ISoulGenToken, ERC721URIStorage, ERC2981PerTokenRoyalties {
     function getOwner() public view returns (address _owner) { _owner = owner; }
     function getAuctioneer() public view returns (address _auctioneer) { _auctioneer = auctioneer; }
     function getUpdater() public view returns (address _updater) { _updater = updater; }
+    function getLastUpdated() public view returns (uint256 _lastUpdated) { _lastUpdated = lastUpdated; }
 }

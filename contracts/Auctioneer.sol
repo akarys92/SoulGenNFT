@@ -65,16 +65,31 @@ contract Auctioneer is IAuctioneer {
         emit AuctionCreated(auction.startTime, auction.endTime, auctionCount);
     }
 
+    function bidAndSettle() public payable {
+        // Only available if the auction has expired
+        require(block.timestamp >= auction.endTime, 'Auction not expired');
+        // Only available if the auction has no current bids
+        require(auction.highBidder == payable(0)); 
+        _bid(msg.sender, msg.value); 
+        _settleAuction();
+        _createAuction();
+    }
+
     function bid() public payable {
+        IAuctioneer.Auction memory _auction = auction; 
+        // Check that the auction isn't over
+        require(block.timestamp < _auction.endTime, 'Auction expired');
+        _bid(msg.sender, msg.value);
+    }
+
+    function _bid(address sender, uint256 amount) internal {
         IAuctioneer.Auction memory _auction = auction; 
         // Check that the auction is active
         require(auction.settled == false, 'Auction has already been settled');
-        // Check that the auction isn't over
-        require(block.timestamp < _auction.endTime, 'Auction expired');
         // Check that the amount bid is more than the current high bid
-        require(msg.value > _auction.highPrice, 'Bid must be higher than current bid');
+        require(amount > _auction.highPrice, 'Bid not higher than current bid');
         // Check that the bidder has not minted before
-        // TODO: Implement this
+        require(soulGen.balanceOf(sender) == 0, "Bidder has already minted");
 
         // Refund the previous high bidder if it's not address 0
         address payable prevHighBidder = _auction.highBidder;
@@ -83,9 +98,9 @@ contract Auctioneer is IAuctioneer {
         }
         // Update the bid
         auction.highPrice = msg.value;
-        auction.highBidder = payable(msg.sender);
+        auction.highBidder = payable(sender);
 
-        emit BidCreated(msg.sender, msg.value, block.timestamp, auctionCount);
+        emit BidCreated(sender, amount, block.timestamp, auctionCount);
     }
 
     function settleStartAuction() public {
@@ -99,6 +114,7 @@ contract Auctioneer is IAuctioneer {
         require(block.timestamp > _auction.endTime, "Auction not expired");
         // Check that the auction has at least one bid
         require(_auction.highBidder != payable(0), "No bids on auction");
+        
         // Mark the auction as settled
         auction.settled = true; 
         // Call the mint function on the SoulGen contract

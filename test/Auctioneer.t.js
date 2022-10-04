@@ -82,7 +82,7 @@ describe("Auctioneer", function () {
             const auctionInitialState = await auctioneer.getAuction(); 
             const bid = auctionInitialState.highPrice.div(2); 
             const otherAccountConnect = await auctioneer.connect(otherAccount); 
-            await expect(otherAccountConnect.bid({ value: bid })).to.be.revertedWith("Bid must be higher than current bid");
+            await expect(otherAccountConnect.bid({ value: bid })).to.be.revertedWith("Bid not higher than current bid");
         });
 
         it("Previous high bidder should get bid back", async function(){
@@ -103,6 +103,11 @@ describe("Auctioneer", function () {
             await expect(otherAccount.getBalance() === otherAccountBalance, "Refund not received"); 
         });
         // TODO: Can't bid if already minted a SoulGen
+        it("Shouldn't allow to bid if already minted.", async function(){
+            const { auctioneer, soulGen, owner, otherAccount } = await loadFixture(deployAuctioneerStartAuction);
+            let balance = await soulGen.balanceOf(owner.address); 
+            console.log(balance);
+        });
     });
     describe("Settlement", function(){
         it("Should allow winning bidder to settle the current auction", async function(){
